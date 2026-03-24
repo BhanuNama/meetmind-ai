@@ -2,7 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 // Uses HuggingFace Inference API — FREE, no local model download, works on Vercel
 const HF_API_URL =
-  'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2'
+  'https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2'
 
 async function embed(texts: string[]): Promise<number[][]> {
   const hfToken = process.env.HUGGINGFACE_API_TOKEN // optional — increases rate limit
