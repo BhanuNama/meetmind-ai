@@ -11,6 +11,9 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 export const metadata: Metadata = {
   title: 'MeetMind AI — Your Meetings. Remembered. Actioned.',
   description: 'Transform meeting audio into structured, searchable, actionable intelligence powered by AI.',
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
