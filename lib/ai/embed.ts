@@ -1,8 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-import OpenAI from 'openai'
+// Use a supported, stable model for embeddings (BAAI/bge-small-en-v1.5) that natively outputs 384-dimensional vectors
+const HF_API_URL = 'https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5'
 
-// Use OpenAI SDK with HuggingFace's v1 compatible endpoint
 async function embed(texts: string[]): Promise<number[][]> {
   const hfToken = process.env.HUGGINGFACE_API_TOKEN
 
@@ -10,18 +10,25 @@ async function embed(texts: string[]): Promise<number[][]> {
     throw new Error('HUGGINGFACE_API_TOKEN is missing. Please add it to your environment variables.')
   }
 
-  const openai = new OpenAI({
-    baseURL: 'https://router.huggingface.co/hf-inference/v1/',
-    apiKey: hfToken,
+  const res = await fetch(HF_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${hfToken}`,
+    },
+    body: JSON.stringify({
+      inputs: texts,
+      options: { wait_for_model: true },
+    }),
   })
 
-  const res = await openai.embeddings.create({
-    model: 'sentence-transformers/all-MiniLM-L6-v2',
-    input: texts,
-  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`HuggingFace embedding error: ${res.status} ${err}`)
+  }
 
-  // OpenAI SDK guarantees returning valid arrays of numbers for embeddings
-  return res.data.map(d => d.embedding)
+  const result = await res.json()
+  return result as number[][]
 }
 
 export async function embedAndStoreTranscript(meetingId: string, transcript: string): Promise<void> {
