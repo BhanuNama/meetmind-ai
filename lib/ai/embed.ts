@@ -1,37 +1,27 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-// Uses HuggingFace Inference API — FREE, no local model download, works on Vercel
-const HF_API_URL =
-  'https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2'
+import OpenAI from 'openai'
 
+// Use OpenAI SDK with HuggingFace's v1 compatible endpoint
 async function embed(texts: string[]): Promise<number[][]> {
-  const hfToken = process.env.HUGGINGFACE_API_TOKEN // optional — increases rate limit
+  const hfToken = process.env.HUGGINGFACE_API_TOKEN
 
-  const res = await fetch(HF_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(hfToken ? { Authorization: `Bearer ${hfToken}` } : {}),
-    },
-    body: JSON.stringify({
-      inputs: {
-        source_sentence: texts[0],
-        sentences: texts
-      },
-      options: { wait_for_model: true },
-    }),
-  })
-
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`HuggingFace embedding error: ${err}`)
+  if (!hfToken) {
+    throw new Error('HUGGINGFACE_API_TOKEN is missing. Please add it to your environment variables.')
   }
 
-  const result = await res.json()
+  const openai = new OpenAI({
+    baseURL: 'https://router.huggingface.co/hf-inference/v1/',
+    apiKey: hfToken,
+  })
 
-  // HF returns either number[][] directly, or a nested array — normalize it
-  // For sentence-transformers it returns: number[][]
-  return result as number[][]
+  const res = await openai.embeddings.create({
+    model: 'sentence-transformers/all-MiniLM-L6-v2',
+    input: texts,
+  })
+
+  // OpenAI SDK guarantees returning valid arrays of numbers for embeddings
+  return res.data.map(d => d.embedding)
 }
 
 export async function embedAndStoreTranscript(meetingId: string, transcript: string): Promise<void> {
