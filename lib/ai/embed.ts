@@ -14,7 +14,10 @@ async function embed(texts: string[]): Promise<number[][]> {
       ...(hfToken ? { Authorization: `Bearer ${hfToken}` } : {}),
     },
     body: JSON.stringify({
-      inputs: texts,
+      inputs: {
+        source_sentence: texts[0],
+        sentences: texts
+      },
       options: { wait_for_model: true },
     }),
   })
